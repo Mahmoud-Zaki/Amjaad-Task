@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Noon Egypt Automation Suite" verbose="1">
+    <test name="Independent flows">
+        <classes>
+            <class name="tests.SearchTest"/>
+            <class name="tests.FooterSocialMediaTest"/>
+            <class name="tests.LocationTest"/>
+        </classes>
+    </test>
+    <test name="Authenticated flows">
+        <classes>
+            <class name="tests.SignInTest"/>
+            <class name="tests.WishlistTest"/>
+            <class name="tests.ProfileTest"/>
+            <class name="tests.CheckoutPaymentTest"/>
+        </classes>
+    </test>
+</suite>
