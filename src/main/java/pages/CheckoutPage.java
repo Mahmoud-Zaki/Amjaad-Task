@@ -33,12 +33,8 @@ public class CheckoutPage extends BasePage {
     public void openAddNewCardForm() {
         confirmAddressIfAsked();
         if (isDisplayed(addNewCardButton)) {
-            clickUntil(addNewCardButton, () -> isVisibleNow(cardNumberField), 3);
+            clickUntil(addNewCardButton, "the new card form to open", () -> isVisibleNow(cardNumberField));
         }
-    }
-
-    public boolean isNewCardFormDisplayed() {
-        return isDisplayed(cardNumberField);
     }
 
     /** Fills whichever of the dummy card fields this payment variant renders. */
@@ -56,17 +52,8 @@ public class CheckoutPage extends BasePage {
         }
     }
 
-    /**
-     * True when the card number field holds a value.
-     *
-     * <p>Reads the DOM property, not the attribute: the {@code value} attribute keeps the
-     * server-rendered default and stays empty no matter what Selenium types.</p>
-     */
+    /** True when the card number field holds a value. Reads the property, not the attribute. */
     public boolean isCardNumberFilled() {
-        if (!isVisibleNow(cardNumberField)) {
-            return false;
-        }
-        String value = getDomProperty(cardNumberField, "value");
-        return value != null && !value.isBlank();
+        return isVisibleNow(cardNumberField) && !getDomProperty(cardNumberField, "value").isBlank();
     }
 }

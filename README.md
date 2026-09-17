@@ -107,7 +107,10 @@ element that is present and visible on screen. Every wait in `BasePage` resolves
 **Clicks before hydration.** The markup is painted before React binds its handlers, so the first
 click on a freshly loaded page is silently swallowed. This alone broke every signed-in test: the
 sign-in modal never opened and each one failed waiting for `#emailInput`. `BasePage.clickUntil`
-clicks, waits for a caller-supplied settle condition, and retries.
+clicks, waits for a caller-supplied settle condition, retries, and throws naming the expectation
+that never arrived. Settle conditions must be wait-free (`isVisibleNow`, not `isDisplayed`):
+`clickUntil` bounds each attempt itself, and a condition that waits internally would nest one
+timeout inside another.
 
 **Elements going stale.** Prices, badges and sponsored slots stream into pages that already look
 ready, detaching elements between being located and being used. `BasePage` re-locates on every
@@ -151,7 +154,13 @@ and were replaced:
   the header.
 - `CheckoutPage.isCardNumberFilled()` read the `value` *attribute*, which holds only the
   server-rendered default and stays empty no matter what Selenium types. It now reads the DOM
-  property. `BasePage` exposes `getDomProperty` and `getDomAttribute` separately for this reason.
+  property, which is why `BasePage` exposes `getDomProperty` rather than a general
+  `getAttribute`.
 - `LocationTest` asserted the header location label changed. That label shows the city, so it
   stays "القاهرة" for any Cairo address and the assertion could not pass. It now asserts the
   address was pinned and the receiver form saved.
+- `ProfileTest` submitted the configured names every run. From the second run on they already
+  matched the account, so noon left the save button disabled, nothing was submitted, and the
+  assertions — which compare the fields to those same configured values — still passed. The test
+  now alternates the value so every run has a real edit to save, and asserts the save button
+  actually enabled before submitting.

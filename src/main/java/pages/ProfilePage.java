@@ -8,18 +8,18 @@ import utils.ConfigReader;
 /**
  * Account profile page.
  *
- * <p>This page lives on a <b>separate host</b> ({@code account.noon.com}), not under
- * {@code noon.com/egypt-ar/}. {@code noon.com/egypt-ar/profile/} is a catalogue page for the
- * search term "profile" and renders no form at all, which is why it has to be opened by URL.</p>
+ * <p>Lives on a <b>separate host</b> ({@code account.noon.com}), so it has to be opened by URL:
+ * {@code noon.com/egypt-ar/profile/} is a catalogue page for the search term "profile" and renders
+ * no form at all.</p>
  */
 public class ProfilePage extends BasePage {
 
     private final By firstNameField = By.id("firstName");
     private final By lastNameField = By.id("lastName");
-
-    /** The save button sits inside a wrapper that carries the {@code disabled} class until edited. */
     private final By updateProfileButton = By.cssSelector("[class*='updateButton'] button");
-    private final By updateProfileWrapper = By.cssSelector("[class*='updateButton']");
+
+    /** noon marks the save button's wrapper disabled until a field actually changes. */
+    private final By disabledSaveWrapper = By.cssSelector("[class*='updateButton'][class*='disabled']");
 
     public ProfilePage(WebDriver driver) {
         super(driver);
@@ -45,32 +45,19 @@ public class ProfilePage extends BasePage {
         return this;
     }
 
-    /** True while the form is unchanged; noon keeps the save button disabled until then. */
-    public boolean isUpdateDisabled() {
-        return getDomAttribute(updateProfileWrapper, "class").contains("disabled");
+    /**
+     * True once the form is dirty. Worth asserting before saving: if the values submitted already
+     * match what the server holds, the button stays disabled, the save is a no-op, and a test that
+     * then compares the fields to those same values passes without exercising anything.
+     */
+    public boolean isSaveEnabled() {
+        return !isVisibleNow(disabledSaveWrapper);
     }
 
-    /**
-     * Saves the form, or does nothing when there is nothing to save.
-     *
-     * <p>noon keeps the save button disabled until a field actually changes, so re-running with
-     * the same configured values leaves it disabled and a plain {@code click} waits out the full
-     * timeout on a button that will never become clickable. Returning early keeps the test
-     * idempotent; the caller's assertions on the field values are what verify the result, and
-     * those values come from the server.</p>
-     */
+    /** Saves the form and waits for the button to return to its disabled resting state. */
     public void updateProfile() {
-        if (isUpdateDisabled()) {
-            return;
-        }
         click(updateProfileButton);
-        // The button disables again once the save lands. Treat a slow round trip as non-fatal:
-        // the caller asserts on the field values, which is the real check.
-        try {
-            wait.until(webDriver -> isUpdateDisabled());
-        } catch (org.openqa.selenium.TimeoutException stillEnabled) {
-            // Fall through to the caller's assertions.
-        }
+        wait.until(webDriver -> isVisibleNow(disabledSaveWrapper));
     }
 
     public String getFirstNameValue() {

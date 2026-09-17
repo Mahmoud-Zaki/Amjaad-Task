@@ -25,13 +25,10 @@ public class TestBase {
 
     protected WebDriver driver;
     protected HomePage homePage;
-    private RunRecorder recorder;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() {
-        DriverFactory.Session session = DriverFactory.createSession();
-        driver = session.driver();
-        recorder = session.recorder();
+        driver = DriverFactory.createDriver();
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(ConfigReader.getInt("page.load.timeout.seconds")));
         // Keep the implicit wait at zero: mixing it with explicit waits makes every negative
         // lookup (isVisibleNow, findElements) pay the implicit timeout and slows the suite down.
@@ -45,21 +42,15 @@ public class TestBase {
         if (driver == null) {
             return;
         }
-        String testName = result.getMethod().getMethodName();
         if (result.getStatus() == ITestResult.FAILURE) {
-            captureScreenshot(testName);
-        }
-        if (recorder != null) {
-            recorder.capture();
+            captureScreenshot(result.getMethod().getMethodName());
         }
         driver.quit();
     }
 
     /**
-     * Writes the whole run as one video, once every test has finished.
-     *
-     * <p>Per-test clips would not satisfy the deliverable, which asks for the full pack running
-     * start to finish with all eight flows visible.</p>
+     * Writes the whole run as one video once every test has finished. Per-test clips would not
+     * satisfy the deliverable, which asks for the full pack running start to finish.
      */
     @AfterSuite(alwaysRun = true)
     public void saveSuiteRecording() {
@@ -87,10 +78,9 @@ public class TestBase {
     }
 
     /**
-     * Drops any session carried over in the shared browser profile.
-     *
-     * <p>Needed by tests whose subject <em>is</em> signing in: with {@code reuse.session=true} they
-     * would otherwise find no sign-in button to click.</p>
+     * Drops any session carried over in the shared browser profile. Needed by tests whose subject
+     * <em>is</em> signing in: with {@code reuse.session=true} they would otherwise find no
+     * sign-in button to click.
      */
     protected void signOut() {
         driver.manage().deleteAllCookies();
@@ -98,11 +88,9 @@ public class TestBase {
     }
 
     /**
-     * Signs in, unless the shared browser profile already carries a live session.
-     *
-     * <p>noon throttles repeated logins on the same account, so re-authenticating in every test
-     * method is what makes the last tests of a suite fail. See
-     * {@code DriverFactory.sharedProfileDir()}.</p>
+     * Signs in, unless the shared browser profile already carries a live session. noon throttles
+     * repeated logins, so re-authenticating in every test method is what makes the last tests of a
+     * suite fail. See {@code DriverFactory.sharedProfileDir()}.
      */
     protected void loginWithConfiguredUser() {
         if (homePage.isSignedIn()) {

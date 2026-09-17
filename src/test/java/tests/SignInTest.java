@@ -10,8 +10,6 @@ public class SignInTest extends TestBase {
 
     @Test(priority = 1, description = "Sign in with email and password")
     public void shouldSignInWithEmailAndPassword() {
-        // The suite shares a browser profile so it only signs in once (noon throttles repeated
-        // logins). This test is the one that must actually perform the login, so start signed out.
         signOut();
         Assert.assertFalse(homePage.isSignedIn(), "Test should start from a signed-out session");
 

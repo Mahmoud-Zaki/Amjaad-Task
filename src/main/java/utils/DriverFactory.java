@@ -17,15 +17,7 @@ public class DriverFactory {
     private DriverFactory() {
     }
 
-    /** A driver, plus the recorder attached to it when {@code record.run=true}. */
-    public record Session(WebDriver driver, RunRecorder recorder) {
-    }
-
     public static WebDriver createDriver() {
-        return createSession().driver();
-    }
-
-    public static Session createSession() {
         String browser = ConfigReader.get("browser").toLowerCase();
         boolean headless = ConfigReader.getBoolean("headless");
 
@@ -37,25 +29,18 @@ public class DriverFactory {
         };
 
         if (!RunRecorder.isEnabled()) {
-            return new Session(driver, null);
+            return driver;
         }
-        // The recorder screenshots through the raw driver so its own captures do not re-enter the
+        // The recorder screenshots through the raw driver so its captures do not re-enter the
         // decorator; the tests drive the decorated one.
-        RunRecorder recorder = new RunRecorder(driver);
-        return new Session(new EventFiringDecorator<>(recorder).decorate(driver), recorder);
+        return new EventFiringDecorator<>(new RunRecorder(driver)).decorate(driver);
     }
 
     /**
-     * A browser profile shared by every test in the run.
+     * A browser profile shared by every test in the run, so the suite signs in once: noon locks
+     * the account after repeated logins in quick succession.
      *
-     * <p>TestNG gives each test method a fresh driver, which without this would mean a fresh
-     * anonymous profile and a fresh sign-in per test. noon locks the account after a handful of
-     * logins in quick succession ("too many invalid attempts, check your email"), so a suite that
-     * signs in five times fails the last few tests on throttling rather than on anything real.
-     * Persisting the profile lets the session cookie carry over, so the suite signs in once.</p>
-     *
-     * <p>It lives under {@code target/} so {@code mvn clean} resets it, and it is only used when
-     * {@code reuse.session=true}. The suite runs sequentially; a parallel run would need one
+     * <p>Under {@code target/} so {@code mvn clean} resets it. A parallel run would need one
      * profile per thread, as Chrome refuses to share a profile directory.</p>
      */
     private static Path sharedProfileDir() {
@@ -72,7 +57,6 @@ public class DriverFactory {
         options.addArguments("--disable-notifications");
         options.addArguments("--disable-infobars");
         options.addArguments("--remote-allow-origins=*");
-        // Chrome 136+ refuses to attach to the default profile path, so use a dedicated one.
         options.addArguments("--disable-features=PasswordLeakDetection,AutofillServerCommunication");
         if (reuseSession()) {
             options.addArguments("--user-data-dir=" + sharedProfileDir());

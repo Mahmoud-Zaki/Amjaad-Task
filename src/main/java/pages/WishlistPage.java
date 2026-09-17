@@ -2,6 +2,7 @@ package pages;
 
 import base.BasePage;
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -28,19 +29,13 @@ public class WishlistPage extends BasePage {
         return isDisplayed(wishlistItem);
     }
 
-    public int getItemCount() {
-        return driver.findElements(wishlistItem).size();
-    }
-
     public String getFirstItemName() {
         return getText(wishlistItemName);
     }
 
     public WishlistPage openMoreOptions() {
         scrollIntoView(moreOptionsButton);
-        if (!clickUntil(moreOptionsButton, () -> isVisibleNow(optionsMenu), 3)) {
-            throw new IllegalStateException("Wishlist item options menu did not open");
-        }
+        clickUntil(moreOptionsButton, "the item options menu to open", () -> isVisibleNow(optionsMenu));
         return this;
     }
 
@@ -62,7 +57,7 @@ public class WishlistPage extends BasePage {
         try {
             waitUntilInvisible(wishlistItem);
             return true;
-        } catch (org.openqa.selenium.TimeoutException stillThere) {
+        } catch (TimeoutException stillThere) {
             return false;
         }
     }

@@ -5,30 +5,25 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 /**
- * The delivery-location picker.
+ * The delivery-location picker, which noon splits across three surfaces:
  *
- * <p>noon splits this across three surfaces, which is why a single-input page object could never
- * drive it:</p>
  * <ol>
- *   <li><b>Saved addresses</b> — signed-in visitors only. "Add a new address" leads to the map.</li>
- *   <li><b>Map overlay</b> — its search box is only a trigger; focusing it swaps in a separate
- *       search overlay that owns the real input and the Google-backed suggestion list. Picking a
- *       suggestion returns here for confirmation.</li>
- *   <li><b>Receiver details</b> — flat number, name and phone, then save. Guests never see this
- *       form: noon only collects receiver details when it has an account to save them against.</li>
+ *   <li><b>Saved addresses</b> — signed-in visitors only; "add a new address" leads to the map.</li>
+ *   <li><b>Map overlay</b> — its search box is only a trigger. Focusing it swaps in a separate
+ *       search overlay that owns the real input and the suggestion list; picking a suggestion
+ *       returns here to confirm.</li>
+ *   <li><b>Receiver details</b> — flat, name, phone, then save. Guests never see this form: noon
+ *       only collects receiver details when there is an account to save them against.</li>
  * </ol>
  *
  * <p>Neither search input carries an id, so both are located structurally.</p>
  */
 public class LocationPage extends BasePage {
 
-    /** Saved-addresses modal. Also used by {@link HomePage} to detect that the picker opened. */
-    public static final By ADD_NEW_ADDRESS = By.cssSelector("[data-qa='address-add-new']");
+    private final By addNewAddress = By.cssSelector("[data-qa='address-add-new']");
+    private final By mapOverlay = By.cssSelector("[class*='mapOverlay']");
 
-    /** Map overlay. Also used by {@link HomePage} for the guest variant of the picker. */
-    public static final By MAP_OVERLAY = By.cssSelector("[class*='mapOverlay']");
-
-    /** Stage-two search box, which the map overlay's own search box opens. */
+    /** Stage-one search box, which opens the stage-two overlay that owns the real input. */
     private final By mapSearchTrigger = By.cssSelector("[class*='mapOverlay'] input[class*='searchInput']");
     private final By addressSearchInput = By.cssSelector("#overlay-portal [class*='searchBox'] input");
     private final By addressSuggestion = By.cssSelector("#overlay-portal button[class*='searchItem']");
@@ -45,28 +40,25 @@ public class LocationPage extends BasePage {
         super(driver);
     }
 
-    public boolean isLocationPickerDisplayed() {
-        return isVisibleNow(ADD_NEW_ADDRESS) || isDisplayed(MAP_OVERLAY);
+    /** True the moment either entry surface is up: saved addresses for a session, map for a guest. */
+    public boolean isPickerOpen() {
+        return isVisibleNow(addNewAddress) || isVisibleNow(mapOverlay);
     }
 
     /** Moves from the saved-addresses modal to the map overlay. A no-op for guests. */
     public void startNewAddress() {
-        if (isVisibleNow(ADD_NEW_ADDRESS)
-                && !clickUntil(ADD_NEW_ADDRESS, () -> isVisibleNow(MAP_OVERLAY), 3)) {
-            throw new IllegalStateException("'Add a new address' did not open the map overlay");
+        if (isVisibleNow(addNewAddress)) {
+            clickUntil(addNewAddress, "the map overlay to open", () -> isVisibleNow(mapOverlay));
         }
-        waitUntilVisible(MAP_OVERLAY);
     }
 
     /**
-     * Types the address into the search overlay and waits for suggestions.
+     * Types the address into the stage-two search overlay and waits for suggestions.
      *
      * @return true when at least one suggestion appeared.
      */
     public boolean searchAddress(String address) {
-        if (!clickUntil(mapSearchTrigger, () -> isVisibleNow(addressSearchInput), 3)) {
-            throw new IllegalStateException("Address search overlay did not open from the map overlay");
-        }
+        clickUntil(mapSearchTrigger, "the address search overlay to open", () -> isVisibleNow(addressSearchInput));
         type(addressSearchInput, address);
         return isDisplayed(addressSuggestion);
     }
@@ -81,8 +73,7 @@ public class LocationPage extends BasePage {
      * The picker's text, which includes the address pinned above the confirm button.
      *
      * <p>Read from the modal root, not the map overlay: the address panel is a sibling of the map,
-     * so the overlay's own text is empty. The individual address lines are hash-suffixed
-     * CSS-module classes with nothing stable to anchor on.</p>
+     * and its own lines are hash-suffixed CSS-module classes with nothing stable to anchor on.</p>
      */
     public String getPinnedAddress() {
         return getText(By.cssSelector("#overlay-portal"));
@@ -93,40 +84,31 @@ public class LocationPage extends BasePage {
         waitUntilInvisible(confirmLocationButton);
     }
 
-    /** True when the post-confirmation receiver details form is shown (signed-in visitors only). */
+    /** True when the receiver details form is shown (signed-in visitors only). */
     public boolean isAddressFormDisplayed() {
         return isDisplayed(roomNum);
     }
 
-    public void enterFlatNum(String num) {
-        type(roomNum, num);
-    }
-
-    public void enterFirstName(String name) {
-        type(firstName, name);
-    }
-
-    public void enterLastName(String name) {
-        type(lastName, name);
-    }
-
-    public void enterPhoneNum(String num) {
-        type(phoneNum, num);
+    public void enterReceiverDetails(String flatNum, String receiverFirstName, String receiverLastName, String phone) {
+        type(roomNum, flatNum);
+        type(firstName, receiverFirstName);
+        type(lastName, receiverLastName);
+        type(phoneNum, phone);
     }
 
     /**
-     * Saves the address and waits for the picker to close.
-     *
-     * <p>Settles on the whole picker closing rather than just the button disappearing, and reports
-     * the on-screen validation text if it does not, since a rejected field leaves the form open
-     * with no other clue as to why.</p>
+     * Saves the address and waits for the picker to close, reporting the on-screen validation text
+     * if it does not — a rejected field otherwise leaves the form open with no clue why.
      */
     public void save() {
-        if (!clickUntil(saveButton, () -> !isVisibleNow(saveButton) && !isVisibleNow(MAP_OVERLAY), 3)) {
-            String validation = getFirstNonBlankText(
-                    By.cssSelector("#overlay-portal [class*='errorMessage'], #overlay-portal [class*='error_']"));
-            throw new IllegalStateException("Saving the address did not close the picker."
-                    + (validation == null ? "" : " noon reported: " + validation));
+        try {
+            clickUntil(saveButton, "the address picker to close",
+                    () -> !isVisibleNow(saveButton) && !isVisibleNow(mapOverlay));
+        } catch (IllegalStateException didNotClose) {
+            String validation = getFirstNonBlankText(ERROR_BANNER);
+            throw validation == null ? didNotClose
+                    : new IllegalStateException(didNotClose.getMessage() + " — noon reported: " + validation,
+                            didNotClose);
         }
     }
 }

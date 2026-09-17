@@ -7,19 +7,18 @@ import org.openqa.selenium.WebDriver;
 /**
  * The sign-in modal.
  *
- * <p>noon defaults to a one-time-password tab. Reaching the password form means switching tabs
- * after the email step, which also re-renders the email field under a different id
+ * <p>noon defaults to a one-time-password tab, so reaching the password form means switching tabs
+ * after the email step — which also re-renders the email field under a different id
  * ({@code #emailInput} becomes {@code #email}).</p>
  */
 public class LoginPage extends BasePage {
 
     private final By emailOrPhoneField = By.id("emailInput");
     private final By continueButton = By.id("login-submit");
-    private final By passwordTab = By.cssSelector("button[data-qa*='log-in-with-password'], button[data-qa*='تسجيل-الدخول-بكلمة-المرور']");
+    private final By passwordTab = By.cssSelector("button[data-qa*='log-in-with-password'], "
+            + "button[data-qa*='تسجيل-الدخول-بكلمة-المرور']");
     private final By passwordField = By.id("password");
     private final By signInSubmitButton = By.cssSelector("button[class*='loginButton']");
-    private final By errorMessage = By.cssSelector(
-            "[class*='errorMessage'], [class*='errorText'], [class*='error_'], [class*='helperText'], [role='alert']");
 
     public LoginPage(WebDriver driver) {
         super(driver);
@@ -38,17 +37,17 @@ public class LoginPage extends BasePage {
     /**
      * Switches from the default one-time-password tab to the password tab.
      *
-     * <p>If the tab never appears it usually means noon rejected the email step rather than that
-     * the locator broke — most often account throttling after repeated logins. Surface the on-screen
-     * message, because the bare "tab not found" failure sends you hunting for the wrong bug.</p>
+     * <p>A missing tab usually means noon rejected the email step rather than that the locator
+     * broke — most often account throttling after repeated logins. Surface the on-screen message,
+     * because a bare "tab not found" sends you hunting for the wrong bug.</p>
      */
     public LoginPage clickLoginWithPassword() {
-        if (!clickUntil(passwordTab, () -> isVisibleNow(passwordField), 3)) {
+        try {
+            clickUntil(passwordTab, "the password field to appear", () -> isVisibleNow(passwordField));
+        } catch (IllegalStateException noPasswordTab) {
             String reason = getErrorMessage();
-            throw new IllegalStateException("Could not reach the password field. "
-                    + (reason == null
-                        ? "The sign-in modal showed no password tab and reported no error."
-                        : "noon reported: " + reason));
+            throw reason == null ? noPasswordTab
+                    : new IllegalStateException("Sign-in rejected. noon reported: " + reason, noPasswordTab);
         }
         return this;
     }
@@ -70,6 +69,6 @@ public class LoginPage extends BasePage {
 
     /** The on-screen validation or throttling message, or null when the modal shows none. */
     public String getErrorMessage() {
-        return getFirstNonBlankText(errorMessage);
+        return getFirstNonBlankText(ERROR_BANNER);
     }
 }

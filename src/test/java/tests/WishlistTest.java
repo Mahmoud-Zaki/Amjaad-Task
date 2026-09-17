@@ -17,20 +17,20 @@ public class WishlistTest extends TestBase {
         homePage.search(ConfigReader.get("search.term"));
         SearchResultsPage resultsPage = new SearchResultsPage(driver);
         Assert.assertTrue(resultsPage.hasResults(), "Search should return products");
-        resultsPage.openFirstProduct();
 
-        ProductPage productPage = new ProductPage(driver);
-        Assert.assertTrue(productPage.isProductDisplayed(), "Product details page should be displayed");
+        ProductPage productPage = resultsPage.openFirstProduct();
+        String productUrl = productPage.getCurrentUrl();
         productPage.addToWishlist();
 
         homePage.openWishlist();
         WishlistPage wishlistPage = new WishlistPage(driver);
         if (!wishlistPage.hasItems()) {
-            // The heart is a toggle, and the suite runs against a real account. If this product
-            // was already favourited by an earlier run, the click above removed it instead of
-            // adding it. Toggle it back on rather than failing on leftover state.
-            driver.navigate().back();
-            Assert.assertTrue(productPage.isProductDisplayed(), "Should return to the product page");
+            // The heart is a toggle and the suite runs against a real account, so if an earlier
+            // run left this product favourited, the click above removed it. Re-open the product by
+            // URL -- not navigate().back(), which depends on how many history entries the click
+            // retries happened to push -- and toggle it back on. If this second click is the one
+            // that removes it, the assertion below fails rather than passing quietly.
+            driver.get(productUrl);
             productPage.addToWishlist();
             homePage.openWishlist();
         }
@@ -46,8 +46,8 @@ public class WishlistTest extends TestBase {
     @Test(priority = 2, dependsOnMethods = "shouldAddProductToWishlist",
             description = "Remove that product from the wishlist")
     public void shouldRemoveProductFromWishlist() {
-        // Each test method gets a fresh browser, so this signs in again. The wishlist itself is
-        // stored against the account, so the product added above is still there.
+        // Each test method gets a fresh browser, but the wishlist is stored against the account,
+        // so the product added above is still there.
         loginWithConfiguredUser();
         homePage.openWishlist();
 

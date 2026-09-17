@@ -56,13 +56,9 @@
                         <suiteXmlFile>${suite.file}</suiteXmlFile>
                     </suiteXmlFiles>
                     <!-- Surefire ignores suiteXmlFiles when -Dtest=... is given, so running a
-                         single class still works. Keep going after a failure so one broken
-                         scenario does not hide the state of the rest of the suite. -->
-                    <testFailureIgnore>false</testFailureIgnore>
+                         single class still works. -->
                     <trimStackTrace>false</trimStackTrace>
-                    <systemPropertyVariables>
-                        <file.encoding>UTF-8</file.encoding>
-                    </systemPropertyVariables>
+                    <!-- Arabic locators and assertion messages need this in the forked JVM. -->
                     <argLine>-Dfile.encoding=UTF-8</argLine>
                 </configuration>
             </plugin>

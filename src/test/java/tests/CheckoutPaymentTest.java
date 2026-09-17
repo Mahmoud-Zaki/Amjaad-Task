@@ -5,7 +5,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import pages.CartPage;
 import pages.CheckoutPage;
-import pages.ProductPage;
 import pages.SearchResultsPage;
 import utils.ConfigReader;
 
@@ -18,10 +17,7 @@ public class CheckoutPaymentTest extends TestBase {
         homePage.search(ConfigReader.get("search.term"));
         SearchResultsPage resultsPage = new SearchResultsPage(driver);
         Assert.assertTrue(resultsPage.hasResults(), "Search should return products");
-        resultsPage.openFirstProduct();
-
-        ProductPage productPage = new ProductPage(driver);
-        productPage.addToCart(homePage);
+        resultsPage.openFirstProduct().addToCart();
 
         CartPage cartPage = new CartPage(driver).open();
         Assert.assertTrue(cartPage.hasItems(), "Cart should contain the added product");
@@ -37,10 +33,7 @@ public class CheckoutPaymentTest extends TestBase {
                 ConfigReader.get("card.cvv")
         );
 
-        Assert.assertTrue(
-                checkoutPage.isCardNumberFilled(),
-                "Dummy card details should be entered"
-        );
+        Assert.assertTrue(checkoutPage.isCardNumberFilled(), "Dummy card details should be entered");
         // Stop here. Do not save the card, confirm payment, or place an order.
     }
 }
