@@ -5,13 +5,11 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 import pages.HomePage;
 import pages.LoginPage;
 import utils.ConfigReader;
 import utils.DriverFactory;
-import utils.RunRecorder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,7 +19,6 @@ import java.time.Duration;
 public class TestBase {
 
     private static final Path SCREENSHOT_DIR = Path.of("target", "screenshots");
-    private static final Path RECORDING_DIR = Path.of("target", "recordings");
 
     protected WebDriver driver;
     protected HomePage homePage;
@@ -46,22 +43,6 @@ public class TestBase {
             captureScreenshot(result.getMethod().getMethodName());
         }
         driver.quit();
-    }
-
-    /**
-     * Writes the whole run as one video once every test has finished. Per-test clips would not
-     * satisfy the deliverable, which asks for the full pack running start to finish.
-     */
-    @AfterSuite(alwaysRun = true)
-    public void saveSuiteRecording() {
-        if (!RunRecorder.isEnabled() || RunRecorder.suiteFrameCount() == 0) {
-            return;
-        }
-        Path written = RunRecorder.saveSuiteRecording(RECORDING_DIR.resolve("full-suite-run.gif"));
-        if (written != null) {
-            System.out.println("Suite recording saved (" + RunRecorder.suiteFrameCount()
-                    + " frames): " + written.toAbsolutePath());
-        }
     }
 
     /** Saves a screenshot next to the surefire reports so failures can be diagnosed after a run. */

@@ -13,6 +13,9 @@ import org.openqa.selenium.WebDriver;
 public class CheckoutPage extends BasePage {
 
     private final By confirmLocationButton = By.cssSelector("[data-qa='address-confirm-location']");
+    /** Saved-addresses modal, shown instead of the map once the account has addresses on file. */
+    private final By savedAddress = By.cssSelector("#overlay-portal button[class*='listItem']");
+    private final By addressModal = By.cssSelector("#overlay-portal [class*='modalContainer']");
     private final By addNewCardButton = By.cssSelector("button[class*='isCardSection'], button[class*='addNewCard']");
     private final By cardNumberField = By.id("ccNumber");
     private final By cardHolderNameField = By.cssSelector("input[name='cardNickname']");
@@ -24,9 +27,18 @@ public class CheckoutPage extends BasePage {
         super(driver);
     }
 
+    /**
+     * Clears whichever delivery-address step checkout puts in the way.
+     *
+     * <p>Which one appears depends on the account: a map overlay to confirm when there is nothing
+     * on file, or the saved-addresses modal once there is. Either covers the payment section, so
+     * the card form is unreachable until it is dismissed.</p>
+     */
     public void confirmAddressIfAsked() {
-        if (isDisplayed(confirmLocationButton)) {
+        if (isVisibleNow(confirmLocationButton)) {
             click(confirmLocationButton);
+        } else if (isDisplayed(savedAddress)) {
+            clickUntil(savedAddress, "the address modal to close", () -> !isVisibleNow(addressModal));
         }
     }
 

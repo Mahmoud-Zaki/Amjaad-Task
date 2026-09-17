@@ -7,7 +7,6 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
-import org.openqa.selenium.support.events.EventFiringDecorator;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,19 +20,12 @@ public class DriverFactory {
         String browser = ConfigReader.get("browser").toLowerCase();
         boolean headless = ConfigReader.getBoolean("headless");
 
-        WebDriver driver = switch (browser) {
+        return switch (browser) {
             case "firefox" -> new FirefoxDriver(firefoxOptions(headless));
             case "edge" -> new EdgeDriver(edgeOptions(headless));
             case "chrome" -> new ChromeDriver(chromeOptions(headless));
             default -> throw new IllegalArgumentException("Unsupported browser: " + browser);
         };
-
-        if (!RunRecorder.isEnabled()) {
-            return driver;
-        }
-        // The recorder screenshots through the raw driver so its captures do not re-enter the
-        // decorator; the tests drive the decorated one.
-        return new EventFiringDecorator<>(new RunRecorder(driver)).decorate(driver);
     }
 
     /**

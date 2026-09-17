@@ -65,21 +65,8 @@ mvn test -Dsuite.file=src/test/resources/my-suite.xml
 
 From IntelliJ IDEA: run `src/test/resources/testng.xml`, or any class under `src/test/java/tests`.
 
-Failures write a screenshot to `target/screenshots/`.
-
-Record the whole run as one animated GIF at `target/recordings/full-suite-run.gif`:
-
-```bash
-mvn test -Drecord.run=true
-```
-
-`RunRecorder` hooks a `WebDriverListener` and grabs a throttled frame after each command, rather
-than capturing from a background thread — a WebDriver session is not thread-safe, and
-screenshotting off-thread interleaves badly with the commands the test is issuing. Frames from
-every test method accumulate into one recording, written on `@AfterSuite`, so the result is a
-single continuous video of all eight flows. It is off by default because capturing roughly doubles
-a run's wall time. The password is never visible: noon masks the field, and the recorder only ever
-captures what is on screen.
+A failing test writes a screenshot to `target/screenshots/`, named after the test method. Passing
+tests capture nothing, so the folder only ever holds what is worth looking at.
 
 > Prefer `mvn test` over `mvn clean test` for repeat runs. `clean` wipes the shared browser
 > profile, which forces a fresh sign-in — see below.
