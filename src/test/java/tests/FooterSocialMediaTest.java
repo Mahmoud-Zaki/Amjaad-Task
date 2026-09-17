@@ -8,20 +8,18 @@ public class FooterSocialMediaTest extends TestBase {
 
     @Test(priority = 1, description = "Open a social media link from the site footer")
     public void shouldOpenFacebookFromFooter() {
-        String originalWindow = homePage.getOriginalWindowHandle();
         homePage.openFacebookFromFooter();
-        homePage.switchToNewestWindow();
+        String noonWindow = homePage.switchToNewestWindow();
 
         Assert.assertTrue(
                 driver.getCurrentUrl().toLowerCase().contains("facebook.com"),
-                "The new window should open Noon Facebook"
+                "The new window should open the noon Facebook page, but was: " + driver.getCurrentUrl()
         );
 
-        driver.close();
-        driver.switchTo().window(originalWindow);
+        homePage.closeCurrentWindowAndSwitchTo(noonWindow);
         Assert.assertTrue(
                 driver.getCurrentUrl().contains("noon.com"),
-                "Browser should return to the Noon site"
+                "Browser should return to the noon site"
         );
     }
 }

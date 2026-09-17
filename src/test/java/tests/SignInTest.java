@@ -10,22 +10,30 @@ public class SignInTest extends TestBase {
 
     @Test(priority = 1, description = "Sign in with email and password")
     public void shouldSignInWithEmailAndPassword() {
-            homePage.openSignIn();
+        // The suite shares a browser profile so it only signs in once (noon throttles repeated
+        // logins). This test is the one that must actually perform the login, so start signed out.
+        signOut();
+        Assert.assertFalse(homePage.isSignedIn(), "Test should start from a signed-out session");
 
-            LoginPage loginPage = new LoginPage(driver);
-            Assert.assertTrue(loginPage.isLoginFormDisplayed(), "Login form should be visible");
+        homePage.openSignIn();
 
-            loginPage
-                    .enterEmailOrPhone(ConfigReader.get("user.email"))
-                    .clickContinue()
-                    .clickLoginWithPassword()
-                    .enterPassword(ConfigReader.get("user.password"))
-                    .submitSignIn();
+        LoginPage loginPage = new LoginPage(driver);
+        Assert.assertTrue(loginPage.isLoginFormDisplayed(), "Login form should be visible");
 
-            Assert.assertFalse(
-                    driver.getCurrentUrl().contains("login"),
-                    "User should leave the login step after a successful sign-in"
-            );
+        loginPage
+                .enterEmailOrPhone(ConfigReader.get("user.email"))
+                .clickContinue()
+                .clickLoginWithPassword()
+                .enterPassword(ConfigReader.get("user.password"))
+                .submitSignIn();
 
+        // Asserting the URL no longer contains "login" would pass whatever happened: sign-in is a
+        // modal on the home page and the URL never mentions login in the first place. Assert on
+        // the header instead, which is the only thing that actually reflects the session.
+        Assert.assertTrue(
+                homePage.isSignedIn(),
+                "Header should stop offering sign-in once the user is authenticated"
+        );
+        Assert.assertNull(loginPage.getErrorMessage(), "Sign-in should not report an error");
     }
 }

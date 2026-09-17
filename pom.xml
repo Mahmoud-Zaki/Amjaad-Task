@@ -17,6 +17,8 @@
         <selenium.version>4.48.0</selenium.version>
         <testng.version>7.10.2</testng.version>
         <surefire.version>3.5.2</surefire.version>
+        <!-- Override with -Dsuite.file=... to run a different TestNG suite. -->
+        <suite.file>src/test/resources/testng.xml</suite.file>
     </properties>
 
     <dependencies>
@@ -51,8 +53,17 @@
                 <version>${surefire.version}</version>
                 <configuration>
                     <suiteXmlFiles>
-                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                        <suiteXmlFile>${suite.file}</suiteXmlFile>
                     </suiteXmlFiles>
+                    <!-- Surefire ignores suiteXmlFiles when -Dtest=... is given, so running a
+                         single class still works. Keep going after a failure so one broken
+                         scenario does not hide the state of the rest of the suite. -->
+                    <testFailureIgnore>false</testFailureIgnore>
+                    <trimStackTrace>false</trimStackTrace>
+                    <systemPropertyVariables>
+                        <file.encoding>UTF-8</file.encoding>
+                    </systemPropertyVariables>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
                 </configuration>
             </plugin>
         </plugins>

@@ -21,11 +21,9 @@ public class CheckoutPaymentTest extends TestBase {
         resultsPage.openFirstProduct();
 
         ProductPage productPage = new ProductPage(driver);
-        productPage.addToCart();
-        productPage.viewCart();
+        productPage.addToCart(homePage);
 
-        CartPage cartPage = new CartPage(driver);
-        //cartPage.open();
+        CartPage cartPage = new CartPage(driver).open();
         Assert.assertTrue(cartPage.hasItems(), "Cart should contain the added product");
         cartPage.proceedToCheckout();
 

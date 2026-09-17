@@ -25,12 +25,29 @@ public class WishlistTest extends TestBase {
 
         homePage.openWishlist();
         WishlistPage wishlistPage = new WishlistPage(driver);
+        if (!wishlistPage.hasItems()) {
+            // The heart is a toggle, and the suite runs against a real account. If this product
+            // was already favourited by an earlier run, the click above removed it instead of
+            // adding it. Toggle it back on rather than failing on leftover state.
+            driver.navigate().back();
+            Assert.assertTrue(productPage.isProductDisplayed(), "Should return to the product page");
+            productPage.addToWishlist();
+            homePage.openWishlist();
+        }
         Assert.assertTrue(wishlistPage.hasItems(), "Wishlist should contain the added product");
+        // The wishlist card prefixes the brand onto the title, so it is not character-for-character
+        // equal to the product page heading. Assert it is populated rather than an exact match.
+        Assert.assertFalse(
+                wishlistPage.getFirstItemName().isBlank(),
+                "Wishlist entry should show a product name"
+        );
     }
 
     @Test(priority = 2, dependsOnMethods = "shouldAddProductToWishlist",
             description = "Remove that product from the wishlist")
     public void shouldRemoveProductFromWishlist() {
+        // Each test method gets a fresh browser, so this signs in again. The wishlist itself is
+        // stored against the account, so the product added above is still there.
         loginWithConfiguredUser();
         homePage.openWishlist();
 
@@ -39,7 +56,8 @@ public class WishlistTest extends TestBase {
         wishlistPage
                 .openMoreOptions()
                 .removeItem()
-                .acceptConfirmation();
+                .acceptConfirmationIfAsked();
+
         Assert.assertTrue(wishlistPage.isEmpty(), "Wishlist should be empty after removing the product");
     }
 }

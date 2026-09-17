@@ -11,9 +11,12 @@ public class ProfileTest extends TestBase {
     @Test(priority = 1, description = "Update profile details")
     public void shouldUpdateProfileDetails() {
         loginWithConfiguredUser();
-        homePage.openProfileFromAccountMenu();
 
-        ProfilePage profilePage = new ProfilePage(driver);
+        // The profile form lives on account.noon.com, reached by URL rather than through the
+        // account dropdown, which only renders on hover and exposes no stable profile link.
+        ProfilePage profilePage = new ProfilePage(driver).open();
+        Assert.assertTrue(profilePage.isProfileFormDisplayed(), "Profile form should be displayed");
+
         String firstName = ConfigReader.get("profile.first.name");
         String lastName = ConfigReader.get("profile.last.name");
         profilePage
@@ -22,5 +25,6 @@ public class ProfileTest extends TestBase {
                 .updateProfile();
 
         Assert.assertEquals(profilePage.getFirstNameValue(), firstName, "First name should be updated");
+        Assert.assertEquals(profilePage.getLastNameValue(), lastName, "Last name should be updated");
     }
 }
